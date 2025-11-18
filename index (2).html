@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Trainer - Improve Your Typing Speed</title>
+    <meta name="description" content="Free typing trainer to improve your typing speed and accuracy with real-time WPM tracking">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Lucide React icons as inline SVG components
+        const RotateCcw = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M3 21v-5h5"/>
+            </svg>
+        );
+
+        const Trophy = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                <path d="M4 22h16"/>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+            </svg>
+        );
+
+        const Target = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="6"/>
+                <circle cx="12" cy="12" r="2"/>
+            </svg>
+        );
+
+        const Zap = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+        );
+
+        const TypingTrainer = () => {
+            const [difficulty, setDifficulty] = useState('medium');
+            const [currentText, setCurrentText] = useState('');
+            const [userInput, setUserInput] = useState('');
+            const [isActive, setIsActive] = useState(false);
+            const [startTime, setStartTime] = useState(null);
+            const [wpm, setWpm] = useState(0);
+            const [accuracy, setAccuracy] = useState(100);
+            const [isComplete, setIsComplete] = useState(false);
+            const inputRef = useRef(null);
+
+            const texts = {
+                easy: [
+                    "The quick brown fox jumps over the lazy dog.",
+                    "Pack my box with five dozen liquor jugs.",
+                    "How vexingly quick daft zebras jump.",
+                    "The five boxing wizards jump quickly.",
+                    "Bright vixens jump; dozy fowl quack."
+                ],
+                medium: [
+                    "In the midst of chaos, there is also opportunity. Focus on what you can control and let go of the rest.",
+                    "Success is not final, failure is not fatal: it is the courage to continue that counts in the end.",
+                    "The only way to do great work is to love what you do and never stop learning from mistakes.",
+                    "Practice makes perfect, but perfect practice makes champions who rise above all challenges.",
+                    "Typing speed increases with consistent practice and dedication to improving your skills daily."
+                ],
+                hard: [
+                    "Sophisticated algorithms and intricate data structures require meticulous attention to detail, precise implementation, and thorough testing procedures.",
+                    "The extraordinary juxtaposition of quantum mechanics and relativistic physics challenges conventional understanding of reality's fundamental nature.",
+                    "Cryptocurrency blockchain technology revolutionizes decentralized financial transactions through cryptographic verification and distributed consensus mechanisms.",
+                    "Neuroplasticity demonstrates the brain's remarkable capacity to reorganize synaptic connections throughout life, adapting to experiences and learning.",
+                    "Epistemological frameworks encompass various methodologies for acquiring knowledge, distinguishing between empirical observation and rational deduction."
+                ]
+            };
+
+            const getRandomText = () => {
+                const textArray = texts[difficulty];
+                return textArray[Math.floor(Math.random() * textArray.length)];
+            };
+
+            useEffect(() => {
+                setCurrentText(getRandomText());
+            }, [difficulty]);
+
+            useEffect(() => {
+                if (isActive && startTime) {
+                    const interval = setInterval(() => {
+                        const timeElapsed = (Date.now() - startTime) / 1000 / 60;
+                        const wordsTyped = userInput.trim().split(/\s+/).length;
+                        const calculatedWpm = Math.round(wordsTyped / timeElapsed) || 0;
+                        setWpm(calculatedWpm);
+                    }, 100);
+                    return () => clearInterval(interval);
+                }
+            }, [isActive, startTime, userInput]);
+
+            useEffect(() => {
+                const correctChars = userInput.split('').filter((char, idx) => char === currentText[idx]).length;
+                const totalChars = userInput.length;
+                const calculatedAccuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+                setAccuracy(calculatedAccuracy);
+
+                if (userInput === currentText) {
+                    setIsComplete(true);
+                    setIsActive(false);
+                }
+            }, [userInput, currentText]);
+
+            const handleInputChange = (e) => {
+                const value = e.target.value;
+                
+                if (!isActive && value.length > 0) {
+                    setIsActive(true);
+                    setStartTime(Date.now());
+                }
+                
+                if (value.length <= currentText.length) {
+                    setUserInput(value);
+                }
+            };
+
+            const resetTrainer = () => {
+                setUserInput('');
+                setIsActive(false);
+                setStartTime(null);
+                setWpm(0);
+                setAccuracy(100);
+                setIsComplete(false);
+                setCurrentText(getRandomText());
+                inputRef.current?.focus();
+            };
+
+            const getCharClass = (charIndex) => {
+                if (charIndex >= userInput.length) return 'text-zinc-600';
+                return userInput[charIndex] === currentText[charIndex] ? 'text-emerald-500' : 'text-red-500 bg-red-900/30';
+            };
+
+            return (
+                <div className="min-h-screen bg-black p-4 sm:p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-zinc-900 rounded-lg shadow-xl p-6 sm:p-8 border border-zinc-800">
+                            <div className="text-center mb-8">
+                                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Typing Trainer</h1>
+                                <p className="text-zinc-400 text-sm sm:text-base">Improve your typing speed and accuracy</p>
+                            </div>
+
+                            {/* Difficulty Selector */}
+                            <div className="flex justify-center gap-2 sm:gap-3 mb-8">
+                                {['easy', 'medium', 'hard'].map((level) => (
+                                    <button
+                                        key={level}
+                                        onClick={() => {
+                                            setDifficulty(level);
+                                            resetTrainer();
+                                        }}
+                                        className={`px-4 sm:px-6 py-2 rounded-full font-medium transition-all text-sm sm:text-base ${
+                                            difficulty === level
+                                                ? 'bg-emerald-500 text-black'
+                                                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                                        }`}
+                                    >
+                                        {level.charAt(0).toUpperCase() + level.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Stats Display */}
+                            <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
+                                <div className="bg-zinc-800 rounded-lg p-3 sm:p-4 text-center border border-zinc-700">
+                                    <div className="flex items-center justify-center mb-2">
+                                        <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mr-2" />
+                                        <span className="text-xs sm:text-sm font-medium text-zinc-400">WPM</span>
+                                    </div>
+                                    <div className="text-2xl sm:text-3xl font-bold text-white">{wpm}</div>
+                                </div>
+                                
+                                <div className="bg-zinc-800 rounded-lg p-3 sm:p-4 text-center border border-zinc-700">
+                                    <div className="flex items-center justify-center mb-2">
+                                        <Target className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mr-2" />
+                                        <span className="text-xs sm:text-sm font-medium text-zinc-400">Accuracy</span>
+                                    </div>
+                                    <div className="text-2xl sm:text-3xl font-bold text-white">{accuracy}%</div>
+                                </div>
+                                
+                                <div className="bg-zinc-800 rounded-lg p-3 sm:p-4 text-center border border-zinc-700">
+                                    <div className="flex items-center justify-center mb-2">
+                                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mr-2" />
+                                        <span className="text-xs sm:text-sm font-medium text-zinc-400">Progress</span>
+                                    </div>
+                                    <div className="text-2xl sm:text-3xl font-bold text-white">
+                                        {Math.round((userInput.length / currentText.length) * 100)}%
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Text Display */}
+                            <div className="bg-black rounded-lg p-4 sm:p-6 mb-6 border border-zinc-800">
+                                <div className="text-lg sm:text-2xl leading-relaxed font-mono select-none">
+                                    {currentText.split('').map((char, idx) => (
+                                        <span key={idx} className={getCharClass(idx)}>
+                                            {char}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Input Area */}
+                            <div className="mb-6">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={userInput}
+                                    onChange={handleInputChange}
+                                    disabled={isComplete}
+                                    className="w-full text-lg sm:text-2xl p-3 sm:p-4 bg-zinc-800 border-2 border-zinc-700 text-white rounded-lg font-mono focus:outline-none focus:border-emerald-500 disabled:bg-zinc-900 disabled:cursor-not-allowed transition-colors placeholder-zinc-600"
+                                    placeholder="Start typing here..."
+                                    autoFocus
+                                />
+                            </div>
+
+                            {/* Completion Message */}
+                            {isComplete && (
+                                <div className="bg-emerald-500 text-black rounded-lg p-6 mb-6 text-center">
+                                    <Trophy className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3" />
+                                    <h2 className="text-xl sm:text-2xl font-bold mb-2">Great Job!</h2>
+                                    <p className="text-sm sm:text-lg font-medium">
+                                        You completed this exercise with {wpm} WPM and {accuracy}% accuracy!
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Reset Button */}
+                            <button
+                                onClick={resetTrainer}
+                                className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-3 px-6 rounded-full transition-colors flex items-center justify-center gap-2"
+                            >
+                                <RotateCcw className="w-5 h-5" />
+                                New Text
+                            </button>
+
+                            {/* Instructions */}
+                            <div className="mt-6 text-center text-xs sm:text-sm text-zinc-500">
+                                <p>Choose a difficulty level, then start typing to begin. Your WPM and accuracy are tracked in real-time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TypingTrainer />);
+    </script>
+</body>
+</html>
